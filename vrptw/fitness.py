@@ -14,7 +14,7 @@ def calculateFitness(solution: list[int], instance: Instance) -> float:
     for node in solution[1:]:
         if node == 0:
             total_distance += instance.distances[current_location][0]
-            current_time = 0.0  # Reset time for next route (each vehicle starts fresh)
+            current_time = 0.0  
             current_load = 0
             current_location = 0
             continue
