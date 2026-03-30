@@ -46,7 +46,7 @@ def calculateFitness(solution: list[int], instance: Instance) -> float:
         total_distance += instance.distances[current_location][0]
         current_time += instance.distances[current_location][0]
 
-    # Number of vehicles is ignored. We only require all customers served once
+    # all customers should be served once
     if visited != instance.customer_ids:
         return float('inf')
 
