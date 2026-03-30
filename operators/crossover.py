@@ -77,38 +77,39 @@ def _extract_routes(solution: List[int]) -> List[List[int]]:
 
 def _replace_route(solution: List[int], old_route: List[int], new_route: List[int]) -> List[int]:
     """Replace a route in the solution with a new route."""
-    # Find the old route in the solution
-    for i in range(len(solution)):
-        if solution[i] == 0 and i > 0:
-            route_end = i
-            route_start = None
-
-            # Find route start
-            for j in range(i-1, -1, -1):
-                if solution[j] == 0:
-                    route_start = j + 1
-                    break
-
-            if route_start is not None:
-                current_route = solution[route_start:route_end]
-                if current_route == old_route:
-                    # Replace this route
-                    return solution[:route_start] + new_route + [0] + solution[route_end + 1:]
-
-    # If route not found, return original
-    return solution.copy()
+    # Build new solution by replacing the old route with new route
+    routes = _extract_routes(solution)
+    
+    # Find which route matches old_route
+    for i, route in enumerate(routes):
+        if route == old_route:
+            routes[i] = new_route
+            break
+    
+    # Rebuild solution from routes with depot separators
+    result = []
+    for route in routes:
+        result.extend(route)
+        result.append(0)
+    
+    return result
 
 
 def _quick_feasibility_check(solution: List[int], instance) -> bool:
     """
-    Quick feasibility check - ensures no duplicate customers and basic capacity.
+    Quick feasibility check - ensures no duplicate customers, capacity, and time windows.
     """
     visited = set()
     current_load = 0
+    current_time = 0.0
+    current_location = 0
 
     for customer_id in solution:
         if customer_id == 0:
-            current_load = 0  # Reset load at depot
+            # Return to depot
+            current_load = 0
+            current_time = 0.0
+            current_location = 0
             continue
 
         if customer_id in visited:
@@ -118,10 +119,21 @@ def _quick_feasibility_check(solution: List[int], instance) -> bool:
         if not customer:
             return False
 
+        # Check capacity
         if current_load + customer.demand > instance.capacity:
             return False
 
+        # Check time window
+        travel_time = instance.distances[current_location][customer_id]
+        arrival_time = current_time + travel_time
+        
+        if arrival_time > customer.dueDate:
+            return False
+
+        # Update state after visiting this customer
+        current_time = max(arrival_time, customer.readyTime) + customer.serviceTime
         current_load += customer.demand
+        current_location = customer_id
         visited.add(customer_id)
 
     # Check all customers are visited
