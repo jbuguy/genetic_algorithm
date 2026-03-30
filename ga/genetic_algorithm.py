@@ -4,7 +4,7 @@ from typing import Any, Callable
 from ga.selection import tournamentSelection
 from operators.crossover import edgeAssemblyCrossover
 from operators.mutation import twoOpt
-from vrptw.generateInit import random_generator
+from vrptw.generateInit import random_generator, remove_trailing_zeros
 from vrptw.instance import Instance
 
 
@@ -71,6 +71,124 @@ class GeneticAlgorithm:
 
         return [(ind, self.fnFitness(ind, self.instance)) for ind in population]
 
+    def _buildRouteArrays(self, route: list[int]) -> tuple[list[float], list[float]]:
+        """Precompute cumulative time and load at each position in the route."""
+        time_at = [0.0] * len(route)
+        load_at = [0.0] * len(route)
+
+        for i in range(1, len(route)):
+            node = route[i]
+
+            if node == 0:  # depot reset
+                time_at[i] = 0.0
+                load_at[i] = 0.0
+                continue
+
+            customer = self.instance.customer_map[node]
+            travel_time = self.instance.distances[route[i - 1]][node]
+            arrival = time_at[i - 1] + travel_time
+
+            time_at[i] = max(arrival, customer.readyTime) + customer.serviceTime
+            load_at[i] = load_at[i - 1] + customer.demand
+
+        return time_at, load_at
+
+    def _canInsert(
+        self,
+        route: list[int],
+        pos: int,
+        customer_id: int,
+        time_at: list[float],
+        load_at: list[float],
+    ) -> bool:
+        """
+        O(1) feasibility check for inserting customer_id at position pos.
+        Only inspects the immediate neighbourhood — no full route scan.
+        """
+        customer = self.instance.customer_map[customer_id]
+        prev_node = route[pos - 1]
+        next_node = route[pos]
+
+        # --- Capacity: load up to prev + new demand must not exceed capacity ---
+        if load_at[pos - 1] + customer.demand > self.instance.capacity:
+            return False
+
+        # --- Time window: can we reach the new customer in time? ---
+        travel_to_new = self.instance.distances[prev_node][customer_id]
+        arrival_at_new = time_at[pos - 1] + travel_to_new
+
+        if arrival_at_new > customer.dueDate:
+            return False
+
+        # --- Propagation: does the delay push the next node past its due date? ---
+        depart_new = max(arrival_at_new, customer.readyTime) + customer.serviceTime
+        travel_to_next = self.instance.distances[customer_id][next_node]
+        arrival_at_next = depart_new + travel_to_next
+
+        if next_node != 0:  # depot has no time window
+            next_customer = self.instance.customer_map[next_node]
+            if arrival_at_next > next_customer.dueDate:
+                return False
+
+        return True
+
+    def repairSolution(self, solution: list[int]) -> list[int]:
+        repaired = [0]
+        current_time = 0
+        current_load = 0
+        skipped = []
+
+        for i in range(1, len(solution)):
+            customer_id = solution[i]
+
+            if customer_id == 0:
+                repaired.append(0)
+                current_time = 0
+                current_load = 0
+                continue
+
+            customer = self.instance.customer_map[customer_id]
+            travel_time = self.instance.distances[repaired[-1]][customer_id]
+            arrival_time = current_time + travel_time
+
+            if (
+                current_load + customer.demand <= self.instance.capacity
+                and arrival_time <= customer.dueDate
+            ):
+                start_service = max(arrival_time, customer.readyTime)
+                repaired.append(customer_id)
+                current_time = start_service + customer.serviceTime
+                current_load += customer.demand
+            else:
+                skipped.append(customer_id)
+
+        repaired.append(0)
+
+        for customer_id in skipped:
+            time_at, load_at = self._buildRouteArrays(repaired)
+
+            best_pos = None
+            best_cost = float("inf")
+
+            for pos in range(1, len(repaired)):
+                if self._canInsert(repaired, pos, customer_id, time_at, load_at):
+                    prev_node = repaired[pos - 1]
+                    next_node = repaired[pos]
+                    cost = (
+                        self.instance.distances[prev_node][customer_id]
+                        + self.instance.distances[customer_id][next_node]
+                        - self.instance.distances[prev_node][next_node]
+                    )
+
+                    if cost < best_cost:
+                        best_cost = cost
+                        best_pos = pos
+
+            if best_pos is not None:
+                repaired = repaired[:best_pos] + [customer_id] + repaired[best_pos:]
+
+        return repaired
+
     def run(self) -> GAResult:
         start = time.time()
         result = GAResult()
@@ -97,6 +215,7 @@ class GeneticAlgorithm:
 
                 # Crossover
                 child = self.fnCrossover(p1, p2, self.instance)
+                child = self.repairSolution(child)
                 child_fitness = self.fnFitness(child, self.instance)
                 result.operatorStats["crossover_calls"] += 1
                 if child_fitness < (p1_fit + p2_fit) / 2:
@@ -104,6 +223,7 @@ class GeneticAlgorithm:
 
                 # Mutation
                 mutated = self.fnMutation(child, self.mutationRate, self.instance)
+                mutated = self.repairSolution(mutated)
                 mutated_fitness = self.fnFitness(mutated, self.instance)
                 result.operatorStats["mutation_calls"] += 1
 
@@ -113,25 +233,24 @@ class GeneticAlgorithm:
                 elif mutated_fitness == float("inf"):
                     result.operatorStats["infeasible_solutions"] += 1
 
-                # If the new child is infeasible, fallback to the best of parents (still ignoring numberVehicle)
                 if child_fitness == float("inf"):
                     if p1_fit != float("inf") or p2_fit != float("inf"):
                         if p1_fit <= p2_fit:
                             child, child_fitness = p1[:], p1_fit
                         else:
                             child, child_fitness = p2[:], p2_fit
-                    # else keep infeasible, no feasible parent available
 
                 new_population.append(child)
 
-            # Re-evaluate only new individuals (elites already scored)
             scored = [
                 (ind, self.fnFitness(ind, self.instance))
                 for ind in new_population[elite_count:]
             ] + [(ind, fit) for ind, fit in scored[:elite_count]]
 
         scored.sort(key=lambda x: x[1])
-        result.bestSolution, result.bestFitness = scored[0]
+        best_solution, best_fitness = scored[0]
+        result.bestSolution = remove_trailing_zeros(best_solution)
+        result.bestFitness = best_fitness
         result.generations = self.generations
         result.runtime = time.time() - start
         return result

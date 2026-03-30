@@ -5,6 +5,31 @@ from vrptw.customer import Customer
 from vrptw.instance import Instance
 
 
+def remove_consecutive_zeros(solution: List[int]) -> List[int]:
+    """Remove consecutive 0s from solution while preserving at least one 0 between routes."""
+    if not solution:
+        return solution
+    
+    cleaned = [solution[0]]
+    for i in range(1, len(solution)):
+        if solution[i] != 0 or cleaned[-1] != 0:
+            cleaned.append(solution[i])
+    
+    return cleaned
+
+
+def remove_trailing_zeros(solution: List[int]) -> List[int]:
+    """Remove trailing zeros from solution (represents unused vehicle routes)."""
+    if not solution:
+        return solution
+    
+    cleaned = solution.copy()
+    while cleaned and cleaned[-1] == 0:
+        cleaned.pop()
+    
+    return cleaned
+
+
 def build_customer_map(instance: Instance) -> dict[int, Customer]:
     return {c.num: c for c in instance.customers}
 
@@ -69,7 +94,8 @@ def random_generator(instance: Instance) -> List[int]:
 
     route.append(0)
     solution.extend(route)
-    return solution
+    solution = remove_consecutive_zeros(solution)
+    return remove_trailing_zeros(solution)
 
 
 def solomon_generator(instance: Instance, randomness: float = 0.3) -> List[int]:
@@ -133,4 +159,5 @@ def solomon_generator(instance: Instance, randomness: float = 0.3) -> List[int]:
         current = best_id
 
     close_route(solution)
-    return solution
+    solution = remove_consecutive_zeros(solution)
+    return remove_trailing_zeros(solution)

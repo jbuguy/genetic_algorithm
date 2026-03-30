@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""
-Main script to run GA experiments with comprehensive stats collection.
-"""
+
 
 import os
 import sys
 import time
-from typing import Optional
 
 from ga.genetic_algorithm import GeneticAlgorithm
 from stats import StatsManager
-from vrptw.fitness import calculateFitness
+from vrptw.fitness import calculateFitness, calculateFitnessStrict
+from vrptw.generateInit import solomon_generator
 from vrptw.instance import Instance
+
+import cProfile
 
 
 class ExperimentRunner:
@@ -49,21 +49,19 @@ class ExperimentRunner:
         if not os.path.exists(instance_path):
             raise FileNotFoundError(f"Instance file not found: {instance_path}")
 
-        if verbose:
-            print(f"\n{'='*70}")
-            print(f"Running: {instance_name}")
-            print(f"{'='*70}")
-            print(f"Population size: {population_size}")
-            print(f"Generations: {generations}")
-            print(f"Mutation rate: {mutation_rate}")
-            print(f"Number of runs: {num_runs}\n")
+        print(f"\n{'='*70}")
+        print(f"Running: {instance_name}")
+        print(f"{'='*70}")
+        print(f"Population size: {population_size}")
+        print(f"Generations: {generations}")
+        print(f"Mutation rate: {mutation_rate}")
+        print(f"Number of runs: {num_runs}\n")
 
         instance = Instance(instance_path)
-        if verbose:
-            print(
-                f"Instance: {len(instance.customers)} customers, "
-                f"capacity={instance.capacity}\n"
-            )
+        print(
+            f"Instance: {len(instance.customers)} customers, "
+            f"capacity={instance.capacity}\n"
+        )
 
         params = {
             "population_size": population_size,
@@ -75,39 +73,33 @@ class ExperimentRunner:
         total_time = time.time()
 
         for run in range(num_runs):
-            if verbose:
-                print(f"Run {run + 1}/{num_runs}...", end=" ", flush=True)
+            print(f"Run {run + 1}/{num_runs}...", end=" ", flush=True)
 
             try:
                 ga = GeneticAlgorithm(
                     instance=instance,
                     fnFitness=calculateFitness,
+                    fnInitPopulation=solomon_generator,
                     populationSize=population_size,
                     generations=generations,
                     mutationRate=mutation_rate,
                 )
-
                 result = ga.run()
                 results.append(result)
 
                 # Save individual result
-                self.stats_manager.save_result(
-                    result, instance_name, run + 1, params
-                )
+                self.stats_manager.save_result(result, instance_name, run + 1, params)
 
                 if result.bestFitness != float("inf"):
-                    if verbose:
-                        print(
-                            f"✓ Fitness: {result.bestFitness:.2f}, "
-                            f"Time: {result.runtime:.2f}s"
-                        )
+                    print(
+                        f"✓ Fitness: {result.bestFitness:.2f}, "
+                        f"Time: {result.runtime:.2f}s"
+                    )
                 else:
-                    if verbose:
-                        print("✗ Infeasible solution")
+                    print("✗ Infeasible solution")
 
             except Exception as e:
-                if verbose:
-                    print(f"✗ Error: {str(e)}")
+                print(f"Error: {str(e)}")
                 raise
 
         total_time = time.time() - total_time
@@ -116,8 +108,7 @@ class ExperimentRunner:
         summary_path = self.stats_manager.save_summary(instance_name, results, params)
 
         # Print summary
-        if verbose:
-            self._print_summary(instance_name, results, total_time)
+        self._print_summary(instance_name, results, total_time)
 
         return {
             "instance": instance_name,
@@ -163,7 +154,7 @@ class ExperimentRunner:
         print(f"\n{'-'*70}")
         print(f"SUMMARY: {instance_name}")
         print(f"{'-'*70}")
-        
+
         # === FITNESS STATISTICS ===
         print(f"\nFITNESS STATISTICS:")
         print(f"  Total runs: {len(results)}")
@@ -179,19 +170,27 @@ class ExperimentRunner:
         else:
             print("  No feasible solutions found")
 
-        print(f"  Avg runtime per run: {sum(r.runtime for r in results)/len(results):.2f}s")
+        print(
+            f"  Avg runtime per run: {sum(r.runtime for r in results)/len(results):.2f}s"
+        )
         print(f"  Total time: {total_time:.2f}s")
 
         # === OPERATOR STATISTICS ===
         print(f"\nOPERATOR STATISTICS (Averaged across {len(results)} runs):")
-        
+
         # Selection
         selection_calls = [r.operatorStats["selection_calls"] for r in results]
-        selection_improvements = [r.operatorStats["selection_improvements"] for r in results]
+        selection_improvements = [
+            r.operatorStats["selection_improvements"] for r in results
+        ]
         avg_sel_calls = sum(selection_calls) / len(selection_calls)
         avg_sel_improve = sum(selection_improvements) / len(selection_improvements)
-        sel_improve_rate = (sum(selection_improvements) / sum(selection_calls) * 100) if sum(selection_calls) > 0 else 0
-        
+        sel_improve_rate = (
+            (sum(selection_improvements) / sum(selection_calls) * 100)
+            if sum(selection_calls) > 0
+            else 0
+        )
+
         print(f"\n  SELECTION:")
         print(f"    Avg calls per run: {avg_sel_calls:.1f}")
         print(f"    Avg improvements per run: {avg_sel_improve:.1f}")
@@ -199,11 +198,17 @@ class ExperimentRunner:
 
         # Crossover
         crossover_calls = [r.operatorStats["crossover_calls"] for r in results]
-        crossover_improvements = [r.operatorStats["crossover_improvements"] for r in results]
+        crossover_improvements = [
+            r.operatorStats["crossover_improvements"] for r in results
+        ]
         avg_cross_calls = sum(crossover_calls) / len(crossover_calls)
         avg_cross_improve = sum(crossover_improvements) / len(crossover_improvements)
-        cross_improve_rate = (sum(crossover_improvements) / sum(crossover_calls) * 100) if sum(crossover_calls) > 0 else 0
-        
+        cross_improve_rate = (
+            (sum(crossover_improvements) / sum(crossover_calls) * 100)
+            if sum(crossover_calls) > 0
+            else 0
+        )
+
         print(f"\n  CROSSOVER:")
         print(f"    Avg calls per run: {avg_cross_calls:.1f}")
         print(f"    Avg improvements per run: {avg_cross_improve:.1f}")
@@ -211,13 +216,19 @@ class ExperimentRunner:
 
         # Mutation
         mutation_calls = [r.operatorStats["mutation_calls"] for r in results]
-        mutation_improvements = [r.operatorStats["mutation_improvements"] for r in results]
+        mutation_improvements = [
+            r.operatorStats["mutation_improvements"] for r in results
+        ]
         infeasible_sols = [r.operatorStats["infeasible_solutions"] for r in results]
         avg_mut_calls = sum(mutation_calls) / len(mutation_calls)
         avg_mut_improve = sum(mutation_improvements) / len(mutation_improvements)
-        mut_improve_rate = (sum(mutation_improvements) / sum(mutation_calls) * 100) if sum(mutation_calls) > 0 else 0
+        mut_improve_rate = (
+            (sum(mutation_improvements) / sum(mutation_calls) * 100)
+            if sum(mutation_calls) > 0
+            else 0
+        )
         avg_infeasible = sum(infeasible_sols) / len(infeasible_sols)
-        
+
         print(f"\n  MUTATION:")
         print(f"    Avg calls per run: {avg_mut_calls:.1f}")
         print(f"    Avg improvements per run: {avg_mut_improve:.1f}")
@@ -226,18 +237,28 @@ class ExperimentRunner:
 
         # Overall effectiveness
         total_ops = sum(selection_calls) + sum(crossover_calls) + sum(mutation_calls)
-        total_improvements = sum(selection_improvements) + sum(crossover_improvements) + sum(mutation_improvements)
+        total_improvements = (
+            sum(selection_improvements)
+            + sum(crossover_improvements)
+            + sum(mutation_improvements)
+        )
         overall_rate = (total_improvements / total_ops * 100) if total_ops > 0 else 0
-        
+
         print(f"\n  OVERALL:")
         print(f"    Total operators called: {total_ops}")
         print(f"    Total improvements: {total_improvements}")
         print(f"    Overall improvement rate: {overall_rate:.2f}%")
-        
+
         if total_improvements > 0:
-            print(f"    Selection contribution: {(sum(selection_improvements)/total_improvements*100):.1f}%")
-            print(f"    Crossover contribution: {(sum(crossover_improvements)/total_improvements*100):.1f}%")
-            print(f"    Mutation contribution: {(sum(mutation_improvements)/total_improvements*100):.1f}%")
+            print(
+                f"    Selection contribution: {(sum(selection_improvements)/total_improvements*100):.1f}%"
+            )
+            print(
+                f"    Crossover contribution: {(sum(crossover_improvements)/total_improvements*100):.1f}%"
+            )
+            print(
+                f"    Mutation contribution: {(sum(mutation_improvements)/total_improvements*100):.1f}%"
+            )
 
         print()
 
@@ -248,13 +269,15 @@ class ExperimentRunner:
             return 0.0
         mean = sum(values) / len(values)
         variance = sum((x - mean) ** 2 for x in values) / len(values)
-        return variance ** 0.5
+        return variance**0.5
 
 
 def main():
     if len(sys.argv) < 2:
         print("Usage:")
-        print("  python main.py <instance> [pop_size] [generations] [mut_rate] [num_runs]")
+        print(
+            "  python main.py <instance> [pop_size] [generations] [mut_rate] [num_runs]"
+        )
         print("  python main.py batch <pop_size> [generations] [mut_rate] [num_runs]")
         print("\nExamples:")
         print("  python main.py C101.txt")
@@ -285,9 +308,9 @@ def main():
             num_runs=num_runs,
         )
 
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("BATCH COMPLETE - All results saved to 'results/' directory")
-        print("="*70)
+        print("=" * 70)
 
     else:
         # Run single instance
@@ -305,9 +328,9 @@ def main():
             num_runs=num_runs,
         )
 
-        print("="*70)
+        print("=" * 70)
         print(f"Results saved to 'results/{instance.replace('.txt', '')}/' directory")
-        print("="*70)
+        print("=" * 70)
 
 
 if __name__ == "__main__":
