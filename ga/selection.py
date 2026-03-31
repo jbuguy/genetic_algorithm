@@ -19,8 +19,9 @@ def selection_truncation(
    scored_population: list[tuple[list[int], float]], k: int = 5
 ) -> tuple[list[int], float]: 
     sorted_population= sorted(scored_population,key=lambda x:x[1])
-    survivors_count = len(sorted_population) // 2
-    return random.sample(sorted_population[:survivors_count],1)
+    survivors_count = max(1, len(sorted_population) // 2)
+    selected = random.sample(sorted_population[:survivors_count], 1)
+    return selected[0]
 
 def tournamentSelection(
     scored_population: list[tuple[list[int], float]], k: int = 5
