@@ -1,9 +1,9 @@
 import time
 from typing import Any, Callable
 
-from ga.selection import tournamentSelection
-from operators.crossover import edgeAssemblyCrossover
-from operators.mutation import twoOpt
+from ga.selection import tournamentSelection,rouletteSelection
+from operators.crossover import edgeAssemblyCrossover,PMXCrossOver
+from operators.mutation import twoOpt,orOpt
 from vrptw.generateInit import random_generator, remove_trailing_zeros
 from vrptw.instance import Instance
 

@@ -1,6 +1,18 @@
 import random
 
 
+def orOpt(solution: list[int], mutationRate: float, instance) -> list[int]:
+    length=len(solution)-1
+    result=[elm for elm in solution]
+    segmentlength=int(length*mutationRate)
+    start=random.randint(0,length-segmentlength)
+    s=result[start:start+segmentlength]
+    result=result[0:start]+result[start+segmentlength::]
+    s.reverse()
+    result[start:start+segmentlength]=s
+    return result
+
+
 def twoOpt(solution: list[int], mutationRate: float, instance) -> list[int]:
 
     if random.random() > mutationRate:
@@ -33,3 +45,4 @@ def twoOpt(solution: list[int], mutationRate: float, instance) -> list[int]:
     
     return mutated_solution
 
+fn=[twoOpt,orOpt]

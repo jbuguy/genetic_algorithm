@@ -1,7 +1,35 @@
 import random
 from typing import List
 
-
+def PMXCrossOver(parent1: List[int], parent2: List[int], instance) -> List[int]:
+    child=[]
+    length=min(len(parent1),len(parent2))
+    point1=random.randint(0,length-1)
+    point2=random.randint(point1,length-1)
+    mappage={}
+    for i in range(point1,point2):
+        mappage[parent1[i]]=parent2[i]
+        mappage[parent2[i]]=parent1[i]
+    for elm in parent1:
+        if mappage.get(elm)==None:
+            child.append(elm)
+        else :child.append(mappage.get(elm))
+    return child
+    
+def crossover_ox(p1, p2):
+    start, end = sorted(random.sample(range(len(p1)), 2))
+    child = [-1] * len(p1)
+    child[start:end] = p1[start:end]
+    
+    p2_idx = end
+    child_idx = end
+    while -1 in child:
+        if p2[p2_idx % len(p2)] not in child:
+            child[child_idx % len(child)] = p2[p2_idx % len(p2)]
+            child_idx += 1
+        p2_idx += 1
+    return child 
+    
 def edgeAssemblyCrossover(parent1: List[int], parent2: List[int], instance) -> List[int]:
     if len(parent1) != len(parent2):
         return parent1.copy()
@@ -80,3 +108,4 @@ def _replace_route(solution: List[int], old_route: List[int], new_route: List[in
         result.append(0)
     
     return result
+fn=[edgeAssemblyCrossover,crossover_ox,PMXCrossOver]
