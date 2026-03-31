@@ -6,9 +6,11 @@ import sys
 import time
 
 from ga.genetic_algorithm import GeneticAlgorithm
+from operators.crossover import edgeAssemblyCrossover
+from operators.mutation import twoOpt
 from stats import StatsManager
 from vrptw.fitness import calculateFitness, getSolutionStats
-from vrptw.generateInit import make_mixed_initializer, solomon_generator
+from vrptw.generateInit import make_mixed_initializer, random_generator, solomon_generator
 from vrptw.instance import Instance
 
 
@@ -76,7 +78,9 @@ class ExperimentRunner:
             ga = GeneticAlgorithm(
                 instance=instance,
                 fnFitness=calculateFitness,
-                fnInitPopulation=make_mixed_initializer(),
+                fnInitPopulation=random_generator,
+                fnCrossover=edgeAssemblyCrossover,
+                fnMutation=twoOpt,
                 populationSize=population_size,
                 generations=generations,
                 mutationRate=mutation_rate,
@@ -167,22 +171,22 @@ class ExperimentRunner:
         # Aggregate stats from all runs
         num_runs = len(results)
         avg_init = (
-            sum(r.operatorStats.get("total_time_init", 0) for r in results) / num_runs
+            sum(r.operatorStats["operator_timings"].get("total_time_init", 0) for r in results) / num_runs
         )
         avg_sel = (
-            sum(r.operatorStats.get("total_time_selection", 0) for r in results)
+            sum(r.operatorStats["operator_timings"].get("total_time_selection", 0) for r in results)
             / num_runs
         )
         avg_cross = (
-            sum(r.operatorStats.get("total_time_crossover", 0) for r in results)
+            sum(r.operatorStats["operator_timings"].get("total_time_crossover", 0) for r in results)
             / num_runs
         )
         avg_mut = (
-            sum(r.operatorStats.get("total_time_mutation", 0) for r in results)
+            sum(r.operatorStats["operator_timings"].get("total_time_mutation", 0) for r in results)
             / num_runs
         )
         avg_repair = (
-            sum(r.operatorStats.get("total_time_repair", 0) for r in results) / num_runs
+            sum(r.operatorStats["operator_timings"].get("total_time_repair", 0) for r in results) / num_runs
         )
         avg_total = sum(r.runtime for r in results) / num_runs
 
@@ -215,7 +219,7 @@ def main():
         print("\nExamples:")
         print("  python main.py C101.txt")
         print("  python main.py C101.txt 50 100 0.2 3")
-        print("  python main.py batch 50 100 0.2 1  # (runs all instances in data/)")
+        print("  python main.py batch 50 100 0.2 1")
         sys.exit(1)
 
     runner = ExperimentRunner()
