@@ -16,7 +16,19 @@ def PMXCrossOver(parent1: List[int], parent2: List[int], instance) -> List[int]:
         else :child.append(mappage.get(elm))
     return child
     
+def crossover_ox(p1, p2):
+    start, end = sorted(random.sample(range(len(p1)), 2))
+    child = [-1] * len(p1)
+    child[start:end] = p1[start:end]
     
+    p2_idx = end
+    child_idx = end
+    while -1 in child:
+        if p2[p2_idx % len(p2)] not in child:
+            child[child_idx % len(child)] = p2[p2_idx % len(p2)]
+            child_idx += 1
+        p2_idx += 1
+    return child 
     
 def edgeAssemblyCrossover(parent1: List[int], parent2: List[int], instance) -> List[int]:
     if len(parent1) != len(parent2):
@@ -96,3 +108,4 @@ def _replace_route(solution: List[int], old_route: List[int], new_route: List[in
         result.append(0)
     
     return result
+fn=[edgeAssemblyCrossover,crossover_ox,PMXCrossOver]

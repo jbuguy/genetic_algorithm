@@ -45,3 +45,4 @@ def twoOpt(solution: list[int], mutationRate: float, instance) -> list[int]:
     
     return mutated_solution
 
+fn=[twoOpt,orOpt]

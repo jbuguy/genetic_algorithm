@@ -14,8 +14,14 @@ def rouletteSelection(
         else:
             cumul+=listproba[i]
     return scored_population[-1]
-        
-    
+
+def selection_truncation(
+   scored_population: list[tuple[list[int], float]], k: int = 5
+) -> tuple[list[int], float]: 
+    sorted_population= sorted(scored_population,key=lambda x:x[1])
+    survivors_count = len(sorted_population) // 2
+    return random.sample(sorted_population[:survivors_count],1)
+
 def tournamentSelection(
     scored_population: list[tuple[list[int], float]], k: int = 5
 ) -> tuple[list[int], float]:
@@ -26,3 +32,4 @@ def tournamentSelection(
     best_id = min(indices, key=lambda i: scored_population[i][1])
     individual, fitness = scored_population[best_id]
     return individual[:], fitness
+fn=[rouletteSelection,selection_truncation,tournamentSelection]
