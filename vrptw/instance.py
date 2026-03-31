@@ -1,5 +1,4 @@
-import math
-
+import numpy as np
 from vrptw.customer import Customer
 
 
@@ -11,35 +10,25 @@ class Instance:
             lines = f.readlines()
 
         self.name = lines[0].strip()
-        self.numberVehicle, self.capacity = map(lambda x: int(x), lines[4].split())
+        self.capacity = int(lines[4].split()[1])
 
-        for i in range(9, len(lines)):
-            sp = lines[i].split()
-            self.customers.append(
-                Customer(
-                    int(sp[0]),
-                    int(sp[1]),
-                    int(sp[2]),
-                    int(sp[3]),
-                    int(sp[4]),
-                    int(sp[5]),
-                    int(sp[6]),
-                )
-            )
-        self.distances= self.compute_distance()
+        for line in lines[9:]:
+            sp = line.split()
+            self.customers.append(Customer(
+                int(sp[0]), int(sp[1]), int(sp[2]),
+                int(sp[3]), int(sp[4]), int(sp[5]), int(sp[6]),
+            ))
 
-    def compute_distance(self):
-        n = len(self.customers)
-        dist = [[0.0 for _ in range(n)] for _ in range(n)]
+        self.customer_map: dict[int, Customer] = {
+            c.num: c for c in self.customers
+        }
 
-        for i in range(n):
-            for j in range(n):
-                c1 = self.customers[i]
-                c2 = self.customers[j]
+        self.customer_ids: set[int] = {c.num for c in self.customers[1:]}
 
-                dx = c1.x - c2.x
-                dy = c1.y - c2.y
+        self.distances: list[list[float]] = self._compute_distances()
 
-                dist[i][j] = math.sqrt(dx * dx + dy * dy)
-
-        return dist
+    def _compute_distances(self) -> list[list[float]]:
+        coords = np.array([(c.x, c.y) for c in self.customers])
+        diff = coords[:, np.newaxis, :] - coords[np.newaxis, :, :]  # 
+        dist_matrix = np.sqrt((diff ** 2).sum(axis=2))
+        return dist_matrix.tolist()
