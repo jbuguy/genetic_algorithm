@@ -1,7 +1,23 @@
 import random
 from typing import List
 
-
+def PMXCrossOver(parent1: List[int], parent2: List[int], instance) -> List[int]:
+    child=[]
+    length=min(len(parent1),len(parent2))
+    point1=random.randint(0,length-1)
+    point2=random.randint(point1,length-1)
+    mappage={}
+    for i in range(point1,point2):
+        mappage[parent1[i]]=parent2[i]
+        mappage[parent2[i]]=parent1[i]
+    for elm in parent1:
+        if mappage.get(elm)==None:
+            child.append(elm)
+        else :child.append(mappage.get(elm))
+    return child
+    
+    
+    
 def edgeAssemblyCrossover(parent1: List[int], parent2: List[int], instance) -> List[int]:
     if len(parent1) != len(parent2):
         return parent1.copy()
