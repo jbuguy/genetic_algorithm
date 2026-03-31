@@ -72,7 +72,8 @@ class GeneticAlgorithm:
         return [(ind, self.fnFitness(ind, self.instance)) for ind in population]
 
     def _buildRouteArrays(self, route: list[int]) -> tuple[list[float], list[float]]:
-        """Precompute cumulative time and load at each position in the route."""
+        distances= self.instance.distances
+        customer_map = self.instance.customer_map
         time_at = [0.0] * len(route)
         load_at = [0.0] * len(route)
 
@@ -84,8 +85,8 @@ class GeneticAlgorithm:
                 load_at[i] = 0.0
                 continue
 
-            customer = self.instance.customer_map[node]
-            travel_time = self.instance.distances[route[i - 1]][node]
+            customer = customer_map[node]
+            travel_time = distances[route[i - 1]][node]
             arrival = time_at[i - 1] + travel_time
 
             time_at[i] = max(arrival, customer.readyTime) + customer.serviceTime
@@ -186,7 +187,9 @@ class GeneticAlgorithm:
 
             if best_pos is not None:
                 repaired = repaired[:best_pos] + [customer_id] + repaired[best_pos:]
-
+            else:
+                repaired = repaired[:-1] + [0, customer_id, 0]
+                
         return repaired
 
     def run(self) -> GAResult:
@@ -205,15 +208,14 @@ class GeneticAlgorithm:
             result.avgRecord.append(avg_fit)
 
             elite_count = max(1, self.PopulationSize // 20)  # top 5%
-            new_population = [ind[:] for ind, _ in scored[:elite_count]]
 
-            while len(new_population) < self.PopulationSize:
-                # Selection — reuse pre-computed fitness
+            new_scored: list[tuple[list[int], float]] = []
+
+            while len(new_scored) + elite_count < self.PopulationSize:
                 p1, p1_fit = self.fnSelection(scored)
                 p2, p2_fit = self.fnSelection(scored)
                 result.operatorStats["selection_calls"] += 2
 
-                # Crossover
                 child = self.fnCrossover(p1, p2, self.instance)
                 child = self.repairSolution(child)
                 child_fitness = self.fnFitness(child, self.instance)
@@ -221,7 +223,6 @@ class GeneticAlgorithm:
                 if child_fitness < (p1_fit + p2_fit) / 2:
                     result.operatorStats["crossover_improvements"] += 1
 
-                # Mutation
                 mutated = self.fnMutation(child, self.mutationRate, self.instance)
                 mutated = self.repairSolution(mutated)
                 mutated_fitness = self.fnFitness(mutated, self.instance)
@@ -234,19 +235,14 @@ class GeneticAlgorithm:
                     result.operatorStats["infeasible_solutions"] += 1
 
                 if child_fitness == float("inf"):
-                    if p1_fit != float("inf") or p2_fit != float("inf"):
-                        if p1_fit <= p2_fit:
-                            child, child_fitness = p1[:], p1_fit
-                        else:
-                            child, child_fitness = p2[:], p2_fit
+                    if p1_fit <= p2_fit and p1_fit != float("inf"):
+                        child, child_fitness = p1[:], p1_fit
+                    elif p2_fit != float("inf"):
+                        child, child_fitness = p2[:], p2_fit
 
-                new_population.append(child)
+                new_scored.append((child, child_fitness))
 
-            scored = [
-                (ind, self.fnFitness(ind, self.instance))
-                for ind in new_population[elite_count:]
-            ] + [(ind, fit) for ind, fit in scored[:elite_count]]
-
+            scored = new_scored + scored[:elite_count]
         scored.sort(key=lambda x: x[1])
         best_solution, best_fitness = scored[0]
         result.bestSolution = remove_trailing_zeros(best_solution)
