@@ -27,7 +27,13 @@ class GAResult:
             "crossover_improvements": 0,
             "mutation_improvements": 0,
             "infeasible_solutions": 0,
-            "operator_timings": {"selection": [], "crossover": [], "mutation": []},
+            "operator_timings": {
+                "total_time_init": 0.0,
+                "total_time_selection": 0.0,
+                "total_time_crossover": 0.0,
+                "total_time_mutation": 0.0,
+                "total_time_repair": 0.0,
+            },
         }
 
 
@@ -72,7 +78,7 @@ class GeneticAlgorithm:
         return [(ind, self.fnFitness(ind, self.instance)) for ind in population]
 
     def _buildRouteArrays(self, route: list[int]) -> tuple[list[float], list[float]]:
-        distances= self.instance.distances
+        distances = self.instance.distances
         customer_map = self.instance.customer_map
         time_at = [0.0] * len(route)
         load_at = [0.0] * len(route)
@@ -189,14 +195,16 @@ class GeneticAlgorithm:
                 repaired = repaired[:best_pos] + [customer_id] + repaired[best_pos:]
             else:
                 repaired = repaired[:-1] + [0, customer_id, 0]
-                
+
         return repaired
 
     def run(self) -> GAResult:
         start = time.time()
         result = GAResult()
-        population = self.initPopulation()
 
+        t_init_start = time.time()
+        population = self.initPopulation()
+        result.operatorStats["operator_timings"]["total_time_init"] = time.time() - t_init_start
         scored = self.evaluatePopulation(population)
 
         for generation in range(self.generations):
@@ -212,19 +220,39 @@ class GeneticAlgorithm:
             new_scored: list[tuple[list[int], float]] = []
 
             while len(new_scored) + elite_count < self.PopulationSize:
+                # selection
+                t0 = time.time()
                 p1, p1_fit = self.fnSelection(scored)
                 p2, p2_fit = self.fnSelection(scored)
+                result.operatorStats["operator_timings"]["total_time_selection"] += (time.time() - t0)
                 result.operatorStats["selection_calls"] += 2
 
+                # crossover
+                t1 = time.time()
                 child = self.fnCrossover(p1, p2, self.instance)
+                result.operatorStats["operator_timings"]["total_time_crossover"] += (time.time() - t1)
+
+                # repair
+                t2 =time.time()
                 child = self.repairSolution(child)
+                result.operatorStats["operator_timings"]["total_time_repair"] += (time.time() - t2)
+                
                 child_fitness = self.fnFitness(child, self.instance)
                 result.operatorStats["crossover_calls"] += 1
+                
                 if child_fitness < (p1_fit + p2_fit) / 2:
                     result.operatorStats["crossover_improvements"] += 1
-
+                
+                # mutation
+                t3 = time.time()
                 mutated = self.fnMutation(child, self.mutationRate, self.instance)
+                result.operatorStats["operator_timings"]["total_time_mutation"] += (time.time() - t3)
+
+                #repair
+                t4 = time.time()
                 mutated = self.repairSolution(mutated)
+                result.operatorStats["operator_timings"]["total_time_repair"] += (time.time() - t4)
+
                 mutated_fitness = self.fnFitness(mutated, self.instance)
                 result.operatorStats["mutation_calls"] += 1
 
