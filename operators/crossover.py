@@ -33,6 +33,7 @@ def crossover_ox(p1, p2,instance):
         p2_pos += 1
             
     return child
+
 def crossover_cx(p1, p2,instance):
     size = len(p1)
     child = [-1] * size
@@ -52,6 +53,7 @@ def crossover_cx(p1, p2,instance):
                 child[i] = p2[i]
         break
     return child
+
 def edgeAssemblyCrossover(parent1: List[int], parent2: List[int], instance) -> List[int]:
     if len(parent1) != len(parent2):
         return parent1.copy()
