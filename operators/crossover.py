@@ -16,22 +16,36 @@ def PMXCrossOver(parent1: List[int], parent2: List[int], instance) -> List[int]:
         else :child.append(mappage.get(elm))
     return child
     
-def crossover_ox(p1, p2,instance):
+def crossover_ox(p1, p2, instance):
     size = len(p1)
-    start, end = sorted(random.sample(range(size), 2))
-    child = [None] * size
-    child[start:end] = p1[start:end]
-    child_pos = end % size
 
-    p2_pos = end % size    
-    for _ in range(size):
-        candidate = p2[p2_pos % size]
-        if candidate not in child[start:end]: # Only check against the swath
-            if child[child_pos] is None:
-                child[child_pos] = candidate
-                child_pos = (child_pos + 1) % size
-        p2_pos += 1
-            
+    # Remove depot (0)
+    p1_nodes = [x for x in p1 if x != 0]
+    p2_nodes = [x for x in p2 if x != 0]
+
+    start, end = sorted(random.sample(range(len(p1_nodes)), 2))
+
+    child_nodes = [None] * len(p1_nodes)
+    child_nodes[start:end] = p1_nodes[start:end]
+
+    remaining = [x for x in p2_nodes if x not in child_nodes]
+
+    idx = 0
+    for i in range(len(child_nodes)):
+        if child_nodes[i] is None:
+            child_nodes[i] = remaining[idx]
+            idx += 1
+
+    # Reinsert depots (simple version: keep same structure as p1)
+    child = []
+    node_idx = 0
+    for x in p1:
+        if x == 0:
+            child.append(0)
+        else:
+            child.append(child_nodes[node_idx])
+            node_idx += 1
+
     return child
 def crossover_cx(p1, p2,instance):
     size = len(p1)
