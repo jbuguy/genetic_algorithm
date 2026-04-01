@@ -16,20 +16,42 @@ def PMXCrossOver(parent1: List[int], parent2: List[int], instance) -> List[int]:
         else :child.append(mappage.get(elm))
     return child
     
-def crossover_ox(p1, p2):
-    start, end = sorted(random.sample(range(len(p1)), 2))
-    child = [-1] * len(p1)
+def crossover_ox(p1, p2,instance):
+    size = len(p1)
+    start, end = sorted(random.sample(range(size), 2))
+    child = [None] * size
     child[start:end] = p1[start:end]
+    child_pos = end % size
+
+    p2_pos = end % size    
+    for _ in range(size):
+        candidate = p2[p2_pos % size]
+        if candidate not in child[start:end]: # Only check against the swath
+            if child[child_pos] is None:
+                child[child_pos] = candidate
+                child_pos = (child_pos + 1) % size
+        p2_pos += 1
+            
+    return child
+def crossover_cx(p1, p2,instance):
+    size = len(p1)
+    child = [-1] * size
+    indices = list(range(size))
     
-    p2_idx = end
-    child_idx = end
     while -1 in child:
-        if p2[p2_idx % len(p2)] not in child:
-            child[child_idx % len(child)] = p2[p2_idx % len(p2)]
-            child_idx += 1
-        p2_idx += 1
-    return child 
-    
+        start = indices[0]
+        val = p1[start]
+        while True:
+            child[start] = p1[start]
+            val2 = p2[start]
+            start = p1.index(val2)
+            if val2 == val:
+                break
+        for i in range(size):
+            if child[i] == -1:
+                child[i] = p2[i]
+        break
+    return child
 def edgeAssemblyCrossover(parent1: List[int], parent2: List[int], instance) -> List[int]:
     if len(parent1) != len(parent2):
         return parent1.copy()

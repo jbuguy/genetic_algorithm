@@ -11,7 +11,13 @@ def orOpt(solution: list[int], mutationRate: float, instance) -> list[int]:
     s.reverse()
     result[start:start+segmentlength]=s
     return result
-
+def mutate_scramble(tour, mutation_rate=0.1,instance=None):
+    if random.random() < mutation_rate:
+        start, end = sorted(random.sample(range(len(tour)), 2))
+        subset = tour[start:end]
+        random.shuffle(subset)
+        tour[start:end] = subset
+    return tour
 
 def twoOpt(solution: list[int], mutationRate: float, instance) -> list[int]:
 

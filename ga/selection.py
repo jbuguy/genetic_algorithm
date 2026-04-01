@@ -22,6 +22,24 @@ def selection_truncation(
     survivors_count = max(1, len(sorted_population) // 2)
     selected = random.sample(sorted_population[:survivors_count], 1)
     return selected[0]
+# def selection_sus(population):
+#     fitness = [1 / evaluate(tour) for tour in population]  # Inverse because lower cost = higher fitness
+#     total_fitness = sum(fitness)
+#     pointers = []
+#     n = len(population)
+#     start_point = random.uniform(0, total_fitness / n)
+#     for i in range(n):
+#         pointers.append(start_point + i * total_fitness / n)
+    
+#     selected = []
+#     for pointer in pointers:
+#         acc = 0
+#         for idx, f in enumerate(fitness):
+#             acc += f
+#             if acc >= pointer:
+#                 selected.append(copy.deepcopy(population[idx]))
+#                 break  
+#     return selected
 
 def tournamentSelection(
     scored_population: list[tuple[list[int], float]], k: int = 5
