@@ -23,8 +23,8 @@ import numpy as np
 
 from ga.genetic_algorithm import GeneticAlgorithm
 from ga.selection import rouletteSelection, selection_truncation, tournamentSelection
-from operators.crossover import edgeAssemblyCrossover, crossover_ox, PMXCrossOver
-from operators.mutation import twoOpt, orOpt
+from operators.crossover import edgeAssemblyCrossover, crossover_ox, PMXCrossOver,crossover_cx
+from operators.mutation import twoOpt, orOpt,mutate_scramble
 from vrptw.fitness import calculateFitness
 from vrptw.instance import Instance
 
@@ -68,10 +68,12 @@ def get_operators():
             'edge_assembly': edgeAssemblyCrossover,
             'order_X':       crossover_ox,
             'PMX':           PMXCrossOver,
+            'CX':            crossover_cx,
         },
         {
             'twoOpt': twoOpt,
             'orOpt':  orOpt,
+            'mutate Scrumble': mutate_scramble,
         },
     )
 

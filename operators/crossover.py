@@ -47,24 +47,46 @@ def crossover_ox(p1, p2, instance):
             node_idx += 1
 
     return child
-def crossover_cx(p1, p2,instance):
-    size = len(p1)
-    child = [-1] * size
-    indices = list(range(size))
-    
-    while -1 in child:
-        start = indices[0]
-        val = p1[start]
-        while True:
-            child[start] = p1[start]
-            val2 = p2[start]
-            start = p1.index(val2)
-            if val2 == val:
-                break
-        for i in range(size):
-            if child[i] == -1:
-                child[i] = p2[i]
-        break
+def crossover_cx(p1, p2, instance):
+    # Remove depot (0)
+    p1_nodes = [x for x in p1 if x != 0]
+    p2_nodes = [x for x in p2 if x != 0]
+
+    size = len(p1_nodes)
+    child_nodes = [-1] * size
+
+    visited = [False] * size
+
+    cycle = 0
+    while not all(visited):
+        # find first unvisited index
+        start = visited.index(False)
+        i = start
+
+        while not visited[i]:
+            visited[i] = True
+
+            # alternate cycles
+            if cycle % 2 == 0:
+                child_nodes[i] = p1_nodes[i]
+            else:
+                child_nodes[i] = p2_nodes[i]
+
+            val = p2_nodes[i]
+            i = p1_nodes.index(val)
+
+        cycle += 1
+
+    # Reinsert depot structure from p1
+    child = []
+    node_idx = 0
+    for x in p1:
+        if x == 0:
+            child.append(0)
+        else:
+            child.append(child_nodes[node_idx])
+            node_idx += 1
+
     return child
 def edgeAssemblyCrossover(parent1: List[int], parent2: List[int], instance) -> List[int]:
     if len(parent1) != len(parent2):
