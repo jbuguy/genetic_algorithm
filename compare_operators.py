@@ -13,18 +13,16 @@ Graphs produced:
 
 import os
 import sys
-import time
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-import matplotlib.ticker as mticker
 import numpy as np
 
 from ga.genetic_algorithm import GeneticAlgorithm
 from ga.selection import rouletteSelection, selection_truncation, tournamentSelection
 from operators.crossover import edgeAssemblyCrossover, crossover_ox, PMXCrossOver
-from operators.mutation import twoOpt, orOpt
+from operators.mutation import mutate_insert, mutate_scramble, twoOpt, orOpt
 from vrptw.fitness import calculateFitness
 from vrptw.instance import Instance
 
@@ -70,7 +68,8 @@ def get_operators():
             'PMX':           PMXCrossOver,
         },
         {
-            'twoOpt': twoOpt,
+            'insert': mutate_insert,
+            'scramble': mutate_scramble,
             'orOpt':  orOpt,
         },
     )

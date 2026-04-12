@@ -51,5 +51,39 @@ def twoOpt(solution: list[int], mutationRate: float, instance) -> list[int]:
     mutated_solution[i:j + 1] = reversed(mutated_solution[i:j + 1])
     
     return mutated_solution
+def mutate_insert(solution: list[int], mutationRate: float, instance) -> list[int]:
+    if random.random() > mutationRate:
+        return solution.copy()
+    
+    # Extract routes
+    routes = []
+    start = 0
+    for i, val in enumerate(solution):
+        if val == 0 and i > 0:
+            if start < i:
+                routes.append((start, i))
+            start = i + 1
+    if not routes:
+        return solution.copy()
+    
+    r_start, r_end = random.choice(routes)
+    route_len = r_end - r_start
+    if route_len < 2:
+        return solution.copy()
+    
+    # Pick customer to move
+    idx = random.randint(r_start, r_end - 1)
+    # Pick new position (cannot be same as original)
+    new_pos = random.randint(r_start, r_end - 1)
+    while new_pos == idx:
+        new_pos = random.randint(r_start, r_end - 1)
+    
+    mutated = solution.copy()
+    customer = mutated.pop(idx)
+    # Adjust new_pos if removal shifts indices
+    if new_pos > idx:
+        new_pos -= 1
+    mutated.insert(new_pos, customer)
+    return mutated
 
-fn=[twoOpt,orOpt]
+fn=[twoOpt,orOpt,mutate_scramble,mutate_insert]

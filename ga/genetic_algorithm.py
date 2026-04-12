@@ -1,9 +1,9 @@
 import time
 from typing import Any, Callable
 
-from ga.selection import tournamentSelection,rouletteSelection
-from operators.crossover import edgeAssemblyCrossover,PMXCrossOver
-from operators.mutation import twoOpt,orOpt
+from ga.selection import tournamentSelection
+from operators.crossover import edgeAssemblyCrossover
+from operators.mutation import twoOpt
 from vrptw.generateInit import random_generator, remove_trailing_zeros
 from vrptw.instance import Instance
 
@@ -215,8 +215,8 @@ class GeneticAlgorithm:
             result.bestRecord.append(best_fit)
             result.avgRecord.append(avg_fit)
 
-            elite_count = max(1, self.PopulationSize // 20)  # top 5%
-
+            # elite_count = max(1, self.PopulationSize // 20)  
+            elite_count =0
             new_scored: list[tuple[list[int], float]] = []
 
             while len(new_scored) + elite_count < self.PopulationSize:

@@ -1,20 +1,6 @@
-import copy
-from functools import reduce
 import random
 
-def rouletteSelection(
-    scored_population: list[tuple[list[int], float]], k: int = 5
-) -> tuple[list[int], float]:
-    valeurtotal=reduce(lambda x,y:x+y[1],scored_population,0)
-    listproba=list(map(lambda x: x[1]/valeurtotal,scored_population))
-    cumul=0;
-    randomvalue=random.random()
-    for i in range(len(listproba)-1):
-        if (listproba[i+1]+cumul>=randomvalue>listproba[i]+cumul):
-            return scored_population[i]
-        else:
-            cumul+=listproba[i]
-    return scored_population[-1]
+
 
 def selection_truncation(
    scored_population: list[tuple[list[int], float]], k: int = 5
@@ -23,26 +9,45 @@ def selection_truncation(
     survivors_count = max(1, len(sorted_population) // 2)
     selected = random.sample(sorted_population[:survivors_count], 1)
     return selected[0]
+
+def rouletteSelection(
+    scored_population: list[tuple[list[int], float]], k: int = 5
+) -> tuple[list[int], float]:
+    # Invert fitness for minimization
+    epsilon = 1e-10
+    weights = [1.0 / (fitness + epsilon) for _, fitness in scored_population]
+    total_weight = sum(weights)
+    probabilities = [w / total_weight for w in weights]
+    
+    # Roulette wheel selection
+    r = random.random()
+    cumulative = 0.0
+    for i, prob in enumerate(probabilities):
+        cumulative += prob
+        if r <= cumulative:
+            # Return a copy of the individual
+            return scored_population[i][0][:], scored_population[i][1]
+    return scored_population[-1][0][:], scored_population[-1][1]
+
 def selection_sus(
     scored_population: list[tuple[list[int], float]], k: int = 5
 ) -> tuple[list[int], float]:
-    total_fitness = sum(ind[1] for ind in scored_population)
-    if total_fitness == 0:
-        return random.choice(scored_population)
-    
+    epsilon = 1e-10
+    weights = [1.0 / (fitness + epsilon) for _, fitness in scored_population]
+    total_weight = sum(weights)
     n = len(scored_population)
-    distance = total_fitness / n
-    start_point = random.uniform(0, distance)
+    distance = total_weight / n
+    start = random.uniform(0, distance)
+    pointers = [start + i * distance for i in range(n)]
     
-    pointer = start_point + random.randint(0, n - 1) * distance
-    
-    acc = 0
-    for individual, fitness in scored_population:
-        acc += fitness
-        if acc >= pointer:
-            return individual[:], fitness
-            
-    return scored_population[-1]
+    # Select one individual (SUS normally selects n, but here we just pick one)
+    r = random.choice(pointers)
+    cumulative = 0.0
+    for i, w in enumerate(weights):
+        cumulative += w
+        if r <= cumulative:
+            return scored_population[i][0][:], scored_population[i][1]
+    return scored_population[-1][0][:], scored_population[-1][1]
 
 def tournamentSelection(
     scored_population: list[tuple[list[int], float]], k: int = 5
