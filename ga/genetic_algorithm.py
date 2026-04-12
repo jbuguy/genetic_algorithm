@@ -215,8 +215,7 @@ class GeneticAlgorithm:
             result.bestRecord.append(best_fit)
             result.avgRecord.append(avg_fit)
 
-            # elite_count = max(1, self.PopulationSize // 20)  
-            elite_count =0
+            elite_count = max(1, self.PopulationSize // 20)  
             new_scored: list[tuple[list[int], float]] = []
 
             while len(new_scored) + elite_count < self.PopulationSize:
