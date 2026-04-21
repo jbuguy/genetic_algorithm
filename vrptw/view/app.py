@@ -30,7 +30,7 @@ from operators.crossover import (
     PMXCrossOver, crossover_ox, crossover_cx, 
     edgeAssemblyCrossover, route_based_crossover
 )
-from operators.mutation import orOpt, mutate_scramble, twoOpt, mutate_insert
+from operators.mutation import orOpt, mutate_scramble, twoOpt, mutate_route_rebuild
 from ga.selection import tournamentSelection, rouletteSelection, selection_truncation
 
 # Try importing plot_results from parent directory
@@ -66,7 +66,7 @@ MUTATIONS = {
     "Or-Opt": orOpt,
     "Scramble": mutate_scramble,
     "2-Opt": twoOpt,
-    "Insert": mutate_insert
+    "Route Rebuild": mutate_route_rebuild,
 }
 
 SELECTIONS = {

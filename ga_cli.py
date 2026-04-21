@@ -23,7 +23,7 @@ from operators.crossover import (
     PMXCrossOver, crossover_ox, crossover_cx,
     edgeAssemblyCrossover, route_based_crossover
 )
-from operators.mutation import orOpt, mutate_scramble, twoOpt, mutate_insert
+from operators.mutation import orOpt, mutate_scramble, twoOpt,mutate_route_rebuild
 from ga.selection import tournamentSelection, rouletteSelection, selection_truncation
 from stats import StatsManager
 
@@ -48,7 +48,7 @@ MUTATIONS = {
     "oropt": orOpt,
     "scramble": mutate_scramble,
     "2opt": twoOpt,
-    "insert": mutate_insert
+    "route_rebuild": mutate_route_rebuild,
 }
 
 SELECTIONS = {
