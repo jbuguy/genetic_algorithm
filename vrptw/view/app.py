@@ -21,7 +21,7 @@ sys.path.insert(0, current_dir)
 # Now import the modules
 from ga.genetic_algorithm import GeneticAlgorithm
 from vrptw.instance import Instance
-from vrptw.fitness import calculateFitness
+from vrptw.fitness import calculateFitness, makeFitnessFunction
 from vrptw.generateInit import (
     random_generator, solomon_generator, 
     cluster_first_route_second, savings_heuristic, make_mixed_initializer
@@ -459,10 +459,16 @@ class GAApp(tk.Tk):
             "selection": sel_name
         }
         
+        fn_fitness = makeFitnessFunction(
+            instance,
+            alpha=0.5,   # weight vehicles (primary objective)
+            beta=0.4,    # weight distance
+            gamma=0.1,   # weight wait time
+        )
         for run_num in range(num_runs):
             ga = GeneticAlgorithm(
                 instance=instance,
-                fnFitness=calculateFitness,
+                fnFitness=fn_fitness,
                 fnInitPopulation=init_fn,
                 fnSelection=sel_fn,
                 fnCrossover=cross_fn,

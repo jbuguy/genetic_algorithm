@@ -23,7 +23,7 @@ from ga.genetic_algorithm import GeneticAlgorithm
 from ga.selection import rouletteSelection, selection_truncation, tournamentSelection
 from operators.crossover import edgeAssemblyCrossover, crossover_ox, PMXCrossOver
 from operators.mutation import mutate_route_rebuild, mutate_scramble, twoOpt, orOpt
-from vrptw.fitness import calculateFitness
+from vrptw.fitness import  makeFitnessFunction
 from vrptw.instance import Instance
 
 # ─── colour palette ────────────────────────────────────────────────────────────
@@ -34,9 +34,16 @@ LIGHT_PALETTE = ["#ADD4F5", "#FAD89E", "#A8DBA8", "#F1A8A8", "#D2AEEE", "#A1E8D8
 # ─── GA runner ─────────────────────────────────────────────────────────────────
 def run_ga(instance, selection_fn, crossover_fn, mutation_fn,
            population_size, generations, mutation_rate):
+
+    fn_fitness = makeFitnessFunction(
+        instance,
+        alpha=0.5,   
+        beta=0.4,    
+        gamma=0.1,   
+    )
     ga = GeneticAlgorithm(
         instance=instance,
-        fnFitness=calculateFitness,
+        fnFitness=fn_fitness,
         fnSelection=selection_fn,
         fnCrossover=crossover_fn,
         fnMutation=mutation_fn,
