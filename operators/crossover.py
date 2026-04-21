@@ -37,14 +37,18 @@ def crossover_ox(p1, p2, instance):
     p2_idx = end
     c_idx = end
     while None in child_seq:
-        if p2_idx >= size: p2_idx = 0
-        if c_idx >= size: c_idx = 0
+        if p2_idx >= size:
+            p2_idx = 0
+        if c_idx >= size: 
+            c_idx = 0
         while child_seq[c_idx] is not None:
             c_idx += 1
-            if c_idx >= size: c_idx = 0
+            if c_idx >= size:
+                c_idx = 0
         while cust2[p2_idx] in used:
             p2_idx += 1
-            if p2_idx >= size: p2_idx = 0
+            if p2_idx >= size:
+                p2_idx = 0
         child_seq[c_idx] = cust2[p2_idx]
         used.add(cust2[p2_idx])
         p2_idx += 1
