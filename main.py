@@ -7,8 +7,8 @@ import time
 
 from ga.genetic_algorithm import GeneticAlgorithm
 from stats import StatsManager
-from vrptw.fitness import calculateFitness, getSolutionStats
-from vrptw.generateInit import make_mixed_initializer, solomon_generator
+from vrptw.fitness import calculateFitness, getSolutionStats, makeFitnessFunction
+from vrptw.generateInit import make_mixed_initializer
 from vrptw.instance import Instance
 
 
@@ -70,12 +70,18 @@ class ExperimentRunner:
         results = []
         total_time = time.time()
 
+        fn_fitness = makeFitnessFunction(
+            instance,
+            alpha=0.5,   # weight vehicles (primary objective)
+            beta=0.4,    # weight distance
+            gamma=0.1,   # weight wait time
+        )
         for run in range(num_runs):
             print(f"Run {run + 1}/{num_runs}...", end=" ", flush=True)
 
             ga = GeneticAlgorithm(
                 instance=instance,
-                fnFitness=calculateFitness,
+                fnFitness=fn_fitness,
                 fnInitPopulation=make_mixed_initializer(),
                 populationSize=population_size,
                 generations=generations,

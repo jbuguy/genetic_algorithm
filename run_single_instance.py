@@ -5,7 +5,7 @@ import sys
 import time
 from ga.genetic_algorithm import GeneticAlgorithm
 from vrptw.instance import Instance
-from vrptw.fitness import calculateFitness
+from vrptw.fitness import calculateFitness, makeFitnessFunction
 
 
 def run_instance(
@@ -39,10 +39,17 @@ def run_instance(
 
         start_time = time.time()
 
+        fn_fitness = makeFitnessFunction(
+            instance,
+            alpha=0.5,   # weight vehicles (primary objective)
+            beta=0.4,    # weight distance
+            gamma=0.1,   # weight wait time
+            # D_max=D_max  # pass a reference value for tighter normalization
+        )
         # Create and run GA
         ga = GeneticAlgorithm(
             instance=instance,
-            fnFitness=calculateFitness,
+            fnFitness=fn_fitness,
             populationSize=population_size,
             generations=generations,
             mutationRate=mutation_rate,

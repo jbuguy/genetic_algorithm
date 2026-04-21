@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from ga.genetic_algorithm import GeneticAlgorithm
 from vrptw.instance import Instance
-from vrptw.fitness import calculateFitness
+from vrptw.fitness import calculateFitness, makeFitnessFunction
 from vrptw.generateInit import (
     random_generator, solomon_generator,
     cluster_first_route_second, savings_heuristic, make_mixed_initializer
@@ -128,9 +128,15 @@ def run_experiment(args):
     for run_num in range(args.runs):
         print(f"  Run {run_num + 1}/{args.runs}...", end=" ", flush=True)
         
+        fn_fitness = makeFitnessFunction(
+            instance,
+            alpha=0.5,   
+            beta=0.4,    
+            gamma=0.1,   
+        )
         ga = GeneticAlgorithm(
             instance=instance,
-            fnFitness=calculateFitness,
+            fnFitness=fn_fitness,
             fnInitPopulation=init_fn,
             fnSelection=sel_fn,
             fnCrossover=cross_fn,
