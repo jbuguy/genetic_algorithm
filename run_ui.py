@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-GA VRPTW UI Application Launcher
-Usage: python run_ui.py
+Advanced GA VRPTW UI Application Launcher
+Includes operator comparison features
+Usage: python run_advanced_ui.py
 """
 
 import sys
@@ -16,11 +17,11 @@ os.chdir(script_dir)
 sys.path.insert(0, str(script_dir))
 
 # Import and run
-from vrptw.view.app import GAApp
+from vrptw.view.advanced_app import AdvancedGAApp
 
 if __name__ == "__main__":
     try:
-        app = GAApp()
+        app = AdvancedGAApp()
         app.mainloop()
     except Exception as e:
         print(f"Error starting application: {e}")
